@@ -84,6 +84,7 @@ ID wpisu: 21372137
 Autor: Bielecki
 Data: 2019-02-27 00:21:37
 Ilość plusów: 2137
+Ilość komentarzy: 2222
 
 Treść wpisu
 
