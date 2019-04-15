@@ -1,7 +1,7 @@
 #!/bin/bash
 
 author="Bielecki & unweek"
-version="0.0.9"
+version="0.0.10"
 lastupdate="04.03.2019"
 
 ## Changelog
@@ -115,7 +115,7 @@ if [ -z "$1" -o -z "$2" ]; then	# jeśli użytkownik nie podał parametrów, ode
 fi
 page="$1"	# pobieramy stronę z parametru pierwszego
 period="$2"	# pobieramy zakres czasu z parametru drugiego
-url="https://a2.wykop.pl/Entries/Hot/page/$page/period/$period/"
+url="https://a2.wykop.pl/Entries/Hot/page/$page/period/$period/appkey/$appkey/token/$token/userkey/$userkey/"   # tutaj wcześniej nie było podpisywania kluczem i wyrzucało niepoprawnie podpisane zapytanie
 sign
 content=$(curl -s -H "apisign: $md5all" -X GET "$url" | sed 's/,{"id"/\n{"id"/g')	# ładujemy cały content i dzielimy zwrotkę na linie, po jednym wpisie każda
 check_errors
@@ -128,8 +128,9 @@ for ((i = 1; i <= "$content_count"; i++)); do	# otwieramy pętlę przez wszystki
 	body=$(grep -oP '((?<="body":")(\\"|[^"])*)' <<< "$entry" | sed 's,<br \\/>,,g;s,<a href=[^>]*>,,g;s,<\\/a>,,g;s,&quot;,",g' )	# ładujemy treść wpisu, jeśli jest ( ͡° ͜ʖ ͡°)
 	author=$(grep -oP '((?<="login":")(\\"|[^"])*)' <<< "$entry")	# ładujemy autora wpisu
 	embed=$(grep -oP '((?<="url":")(\\"|[^"])*)' <<< "$entry" | sed 's,\\,,g')	# ładujemy załącznik, jeśli jest
+	comments=$(grep -oP '((?<="comments_count":)[^,]*)' <<< "$entry")
 
-	printf "\n\033[1;33m%b\033[0;36m%b" "ID wpisu: " "$id" "Autor: " "$author" "Data: " "$date" "Ilość plusów: " "$votes"	# wypisujemy info na temat wpisu
+	printf "\n\033[1;33m%b\033[0;36m%b" "ID wpisu: " "$id" "Autor: " "$author" "Data: " "$date" "Ilość plusów: " "$votes" "Ilość komentarzy: " "$comments"	# wypisywanie informacji o wpisie
 	printf "\033[0m"	# mały reset koloru
 	if [ -n "$body" ]; then	# jeśli body nie jest puste...
 		printf "\n\n%b\n" "$body" # ...wypisujemy treść wpisu
@@ -173,7 +174,7 @@ url="https://a2.wykop.pl/Entries/Stream/page/$page/firstid/$1/appkey/$appkey/tok
 sign
 content=$(curl -s -H "apisign: $md5all" -X GET "$url" | sed 's/,{"id"/\n{"id"/g')	# ładujemy cały content i dzielimy zwrotkę na linie, po jednym wpisie każda
 check_errors
-content_count=$(wc -l <<< "$content")	# liczymy ilość wpisów po ilości linii po podziale 
+content_count=$(wc -l <<< "$content")	# liczymy ilość wpisów po ilości linii po podziale
 printf "\n\033[1;33m%b\033[0;36m%b\033[0m\n" "Pobranych wpisów: " "$content_count"	# informujemy użytkownika o ilości pobranych wpisów, bo jest ich więcej niż w gorących
 sleep 1	# dajemy użytkownikowi chwilę, żeby zapoznał się z informacją
 for ((i = 1; i <= "$content_count"; i++)); do	# otwieramy pętlę przez wszystkie wpisy
@@ -184,8 +185,11 @@ for ((i = 1; i <= "$content_count"; i++)); do	# otwieramy pętlę przez wszystki
 	body=$(grep -oP '((?<="body":")(\\"|[^"])*)' <<< "$entry" | sed 's,<br \\/>,,g;s,<a href=[^>]*>,,g;s,<\\/a>,,g;s,&quot;,",g' )	# treść wpisu
 	author=$(grep -oP '((?<="login":")(\\"|[^"])*)' <<< "$entry")	# autor
 	embed=$(grep -oP '((?<="url":")(\\"|[^"])*)' <<< "$entry" | sed 's,\\,,g')	# dodawanie załącznika
+	comments=$(grep -oP '((?<="comments_count":)[^,]*)' <<< "$entry")
+    #tutaj miało być rozróżnianie płci, ale za każdym razem api zwraca "male"
+    #jeszcze chciałem dać kolory do nicków, ale nie wiem, jak się je daje
 
-	printf "\n\033[1;33m%b\033[0;36m%b" "ID wpisu: " "$id" "Autor: " "$author" "Data: " "$date" "Ilość plusów: " "$votes"	# wypisywanie informacji o wpisie
+	printf "\n\033[1;33m%b\033[0;36m%b" "ID wpisu: " "$id" "Autor: " "$author" "Data: " "$date" "Ilość plusów: " "$votes" "Ilość komentarzy: " "$comments"	# wypisywanie informacji o wpisie
 	printf "\033[0m"	# resetowanie koloru
 	if [ -n "$body" ]; then	# sprawdzanie, body nie jest puste
 		printf "\n\n%b\n" "$body"	# wypisywanie treści wpisu
@@ -236,13 +240,14 @@ url="https://a2.wykop.pl/Notifications/Index/page/$page/firstid/$firstid/appkey/
 sign
 content=$(curl -s -H "apisign: $md5all" -X GET "$url" | sed 's/,{"id"/\n{"id"/g')	# ładujemy cały content i dzielimy zwrotkę na linie
 check_errors
-content_count=$(wc -l <<< "$content")	# liczenie powiadomień 
+content_count=$(wc -l <<< "$content")	# liczenie powiadomień
 for ((i = 1; i <= "$content_count"; i++)); do	# otwieramy pętlę
 	entry=$(sed -n "${i}p" <<< "$content")	# dzielenie powiadomień na pojedyńcze
 	date=$(grep -oP '((?<="date":")[^"]*)' <<< "$entry")	# data
 	body=$(grep -oP '((?<="body":")(\\"|[^"])*)' <<< "$entry" | sed 's,<br \\/>,,g;s,<a href=[^>]*>,,g;s,<\\/a>,,g;s,&quot;,",g' )	# treść wpisu
 	author=$(grep -oP '((?<="login":")(\\"|[^"])*)' <<< "$entry")	# autor
 	embed=$(grep -oP '((?<="url":")(\\"|[^"])*)' <<< "$entry" | sed 's,\\,,g')	# dodawanie załącznika
+	# tutaj miałem dodać sprawdzanie, czy powiadomienie zostało już wcześciej odczytane, ale po kilku godzinach męczenia się z kodem odpuściłem
 
 	printf "\n\033[1;33m%b\033[0;36m%b" "Od: " "$author" "Data: " "$date"	# wypisywanie informacji
 	printf "\033[0m"	# resetowanie koloru
@@ -270,7 +275,7 @@ url="https://a2.wykop.pl/Entries/Observed/page/$page/appkey/$appkey/token/$token
 sign
 content=$(curl -s -H "apisign: $md5all" -X GET "$url" | sed 's/,{"id"/\n{"id"/g')	# ładujemy cały content i dzielimy zwrotkę na linie, po jednym wpisie każda
 check_errors
-content_count=$(wc -l <<< "$content")	# liczymy ilość wpisów po ilości linii po podziale 
+content_count=$(wc -l <<< "$content")	# liczymy ilość wpisów po ilości linii po podziale
 printf "\n\033[1;33m%b\033[0;36m%b\033[0m\n" "Pobranych wpisów: " "$content_count"	# informujemy użytkownika o ilości pobranych wpisów, bo jest ich więcej niż w gorących
 sleep 1	# dajemy użytkownikowi chwilę, żeby zapoznał się z informacją
 for ((i = 1; i <= "$content_count"; i++)); do	# otwieramy pętlę przez wszystkie wpisy
@@ -281,8 +286,9 @@ for ((i = 1; i <= "$content_count"; i++)); do	# otwieramy pętlę przez wszystki
 	body=$(grep -oP '((?<="body":")(\\"|[^"])*)' <<< "$entry" | sed 's,<br \\/>,,g;s,<a href=[^>]*>,,g;s,<\\/a>,,g;s,&quot;,",g' )	# treść wpisu
 	author=$(grep -oP '((?<="login":")(\\"|[^"])*)' <<< "$entry")	# autor
 	embed=$(grep -oP '((?<="url":")(\\"|[^"])*)' <<< "$entry" | sed 's,\\,,g')	# dodawanie załącznika
+	comments=$(grep -oP '((?<="comments_count":)[^,]*)' <<< "$entry")
 
-	printf "\n\033[1;33m%b\033[0;36m%b" "ID wpisu: " "$id" "Autor: " "$author" "Data: " "$date" "Ilość plusów: " "$votes"	# wypisywanie informacji o wpisie
+	printf "\n\033[1;33m%b\033[0;36m%b" "ID wpisu: " "$id" "Autor: " "$author" "Data: " "$date" "Ilość plusów: " "$votes" "Ilość komentarzy: " "$comments"	# wypisywanie informacji o wpisie
 	printf "\033[0m"	# resetowanie koloru
 	if [ -n "$body" ]; then	# sprawdzanie, body nie jest puste
 		printf "\n\n%b\n" "$body"	# wypisywanie treści wpisu
