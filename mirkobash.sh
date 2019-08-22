@@ -309,8 +309,9 @@ post() {	# funkcja pozwalająca na zapostowanie tekstu na mirko
 if [ -z "$1" ]; then usage; fi
 
 tresc="$1"	# pierwszy parametr to treść postu - musi być podany w cudzysłowiu
-data="body=$tresc"
-data2="$tresc"
+embed="$2"
+data="body=$tresc&embed=$embed"
+data2="$tresc,$embed"
 url="https://a2.wykop.pl/entries/add/appkey/$appkey/token/$token/userkey/$userkey/"
 sign
 content=$(curl -s -H "apisign: $md5all" -X POST --data "$data" "$url")	# generalnie pobieramy info czy się udało, czy wystąpił błąd
