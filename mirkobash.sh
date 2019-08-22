@@ -1,8 +1,8 @@
 #!/bin/bash
 
 author="Bielecki & unweek"
-version="0.0.10"
-lastupdate="04.03.2019"
+version="0.0.11"
+lastupdate="22.08.2019"
 
 ## Changelog
 #
